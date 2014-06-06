@@ -1,0 +1,10 @@
+{
+    "version" : "0.1-alpha-*",
+    "dependencies": {
+        "Microsoft.Net.Http.Client" : "",
+        "System.Net.Http" : ""
+    },
+    "configurations": {
+        "net45": { }
+    }
+}
