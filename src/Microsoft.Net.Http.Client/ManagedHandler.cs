@@ -36,12 +36,12 @@ namespace Microsoft.Net.Http.Client
                 throw new NotImplementedException(request.Method.Method);
             }
 
-            Stream transport = null;
+            ApmStream transport = null;
             TcpClient client = new TcpClient();
             try
             {
                 await client.ConnectAsync(request.GetHostProperty(), request.GetPortProperty().Value);
-                transport = client.GetStream();
+                transport = new ApmStreamWrapper(client.GetStream());
 
                 if (string.Equals("https", request.GetSchemeProperty(), StringComparison.OrdinalIgnoreCase))
                 {
