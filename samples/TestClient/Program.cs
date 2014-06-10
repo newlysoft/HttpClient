@@ -12,7 +12,10 @@ namespace TestClient
     {
         public static void Main(string[] args)
         {
-            HttpClient client = new HttpClient(new ManagedHandler());
+            HttpClient client = new HttpClient(new ManagedHandler()
+            {
+                // ProxyAddress = new Uri("http://itgproxy:80")
+            });
 
             var response = client.GetAsync("https://www.myget.org/f/aspnetwebstacknightly/").Result;
             Console.WriteLine(response);

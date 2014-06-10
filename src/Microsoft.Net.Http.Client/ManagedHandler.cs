@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Globalization;
 using Microsoft.Net.Security;
 
 namespace Microsoft.Net.Http.Client
@@ -16,7 +13,12 @@ namespace Microsoft.Net.Http.Client
     {
         public ManagedHandler()
         {
+        }
 
+        public Uri ProxyAddress
+        {
+            // TODO: Validate that only an absolute http address is specified. Path, query, and fragment are ignored
+            get; set;
         }
 
         protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -33,27 +35,24 @@ namespace Microsoft.Net.Http.Client
 
             if (request.Method != HttpMethod.Get)
             {
-                throw new NotImplementedException(request.Method.Method);
+                throw new NotImplementedException(request.Method.Method); // TODO: POST
             }
 
-            ApmStream transport = null;
-            TcpClient client = new TcpClient();
-            try
-            {
-                await client.ConnectAsync(request.GetHostProperty(), request.GetPortProperty().Value);
-                transport = new ApmStreamWrapper(client.GetStream());
+            ProxyMode proxyMode = DetermineProxyModeAndAddressLine(request);
+            ApmStream transport = await ConnectAsync(request, cancellationToken);
 
-                if (string.Equals("https", request.GetSchemeProperty(), StringComparison.OrdinalIgnoreCase))
-                {
-                    SslStream sslStream = new SslStream(transport);
-                    await sslStream.AuthenticateAsClientAsync(request.GetHostProperty());
-                    transport = sslStream;
-                }
-            }
-            catch (SocketException sox)
+            if (proxyMode == ProxyMode.Tunnel)
             {
-                ((IDisposable)client).Dispose();
-                throw new HttpRequestException("Request failed", sox);
+                await TunnelThroughProxyAsync(request, transport, cancellationToken);
+            }
+
+            System.Diagnostics.Debug.Assert(!(proxyMode == ProxyMode.Http && request.IsHttps()));
+
+            if (request.IsHttps())
+            {
+                SslStream sslStream = new SslStream(transport);
+                await sslStream.AuthenticateAsClientAsync(request.GetHostProperty());
+                transport = sslStream;
             }
 
             var bufferedReadStream = new BufferedReadStream(transport);
@@ -74,8 +73,7 @@ namespace Microsoft.Net.Http.Client
                 scheme = request.RequestUri.Scheme;
                 request.SetSchemeProperty(scheme);
             }
-            if (!(scheme.Equals("http", StringComparison.OrdinalIgnoreCase)
-                  || scheme.Equals("https", StringComparison.OrdinalIgnoreCase)))
+            if (!(request.IsHttp() || request.IsHttps()))
             {
                 throw new InvalidOperationException("Only HTTP or HTTPS are supported, not: " + request.RequestUri.Scheme);
             }
@@ -90,6 +88,11 @@ namespace Microsoft.Net.Http.Client
                 host = request.RequestUri.DnsSafeHost;
                 request.SetHostProperty(host);
             }
+            string connectionHost = request.GetConnectionHostProperty();
+            if (string.IsNullOrWhiteSpace(connectionHost))
+            {
+                request.SetConnectionHostProperty(host);
+            }
 
             int? port = request.GetPortProperty();
             if (!port.HasValue)
@@ -100,6 +103,11 @@ namespace Microsoft.Net.Http.Client
                 }
                 port = request.RequestUri.Port;
                 request.SetPortProperty(port);
+            }
+            int? connectionPort = request.GetConnectionPortProperty();
+            if (!connectionPort.HasValue)
+            {
+                request.SetConnectionPortProperty(port);
             }
 
             string pathAndQuery = request.GetPathAndQueryProperty();
@@ -130,6 +138,89 @@ namespace Microsoft.Net.Http.Client
                 }
 
                 request.Headers.Host = host + ":" + port.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        private ProxyMode DetermineProxyModeAndAddressLine(HttpRequestMessage request)
+        {
+            string scheme = request.GetSchemeProperty();
+            string host = request.GetHostProperty();
+            int? port = request.GetPortProperty();
+            string pathAndQuery = request.GetPathAndQueryProperty();
+            string addressLine = request.GetAddressLineProperty();
+
+            if (string.IsNullOrEmpty(addressLine))
+            {
+                request.SetAddressLineProperty(pathAndQuery);
+            }
+
+            if (ProxyAddress == null)
+            {
+                return ProxyMode.None;
+            }
+            if (request.IsHttp())
+            {
+                if (string.IsNullOrEmpty(addressLine))
+                {
+                    addressLine = scheme + "://" + host + ":" + port.Value + pathAndQuery;
+                    request.SetAddressLineProperty(addressLine);
+                }
+                request.SetConnectionHostProperty(ProxyAddress.DnsSafeHost);
+                request.SetConnectionPortProperty(ProxyAddress.Port);
+                return ProxyMode.Http;
+            }
+            // Tunneling generates a completely seperate request, don't alter the original, just the connection address.
+            request.SetConnectionHostProperty(ProxyAddress.DnsSafeHost);
+            request.SetConnectionPortProperty(ProxyAddress.Port);
+            return ProxyMode.Tunnel;
+        }
+
+        private async Task<ApmStream> ConnectAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            TcpClient client = new TcpClient();
+            try
+            {
+                await client.ConnectAsync(request.GetConnectionHostProperty(), request.GetConnectionPortProperty().Value);
+                return new ApmStreamWrapper(client.GetStream());
+            }
+            catch (SocketException sox)
+            {
+                ((IDisposable)client).Dispose();
+                throw new HttpRequestException("Request failed", sox);
+            }
+        }
+
+        private async Task TunnelThroughProxyAsync(HttpRequestMessage request, ApmStream transport, CancellationToken cancellationToken)
+        {
+            // Send a Connect request:
+            // CONNECT server.example.com:80 HTTP / 1.1
+            // Host: server.example.com:80
+            var connectReqeuest = new HttpRequestMessage();
+            connectReqeuest.Method = new HttpMethod("CONNECT");
+            // TODO: IPv6 hosts
+            string authority = request.GetHostProperty() + ":" + request.GetPortProperty().Value;
+            connectReqeuest.SetAddressLineProperty(authority);
+            connectReqeuest.Headers.Host = authority;
+
+            HttpConnection connection = new HttpConnection(new BufferedReadStream(transport));
+            HttpResponseMessage connectResponse;
+            try
+            {
+                connectResponse = await connection.SendAsync(connectReqeuest, cancellationToken);
+                // TODO:? await connectResponse.Content.LoadIntoBufferAsync(); // Drain any body
+                // There's no danger of accidently consuming real response data because the real request hasn't been sent yet.
+            }
+            catch (Exception ex)
+            {
+                transport.Dispose();
+                throw new HttpRequestException("SSL Tunnel failed to initialize", ex);
+            }
+
+            // Listen for a response. Any 2XX is considered success, anything else is considered a failure.
+            if ((int)connectResponse.StatusCode < 200 || 300 <= (int)connectResponse.StatusCode)
+            {
+                transport.Dispose();
+                throw new HttpRequestException("Failed to negotiate the poxy tunnel: " + connectResponse.ToString());
             }
         }
     }

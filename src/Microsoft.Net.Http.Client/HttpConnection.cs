@@ -52,7 +52,7 @@ namespace Microsoft.Net.Http.Client
             StringBuilder builder = new StringBuilder();
             builder.Append(request.Method);
             builder.Append(' ');
-            builder.Append(request.GetPathAndQueryProperty()); // TODO: Connect/Proxy
+            builder.Append(request.GetAddressLineProperty());
             builder.Append(" HTTP/");
             builder.Append(request.Version.ToString(2));
             builder.Append(CRLF);
