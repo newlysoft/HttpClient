@@ -13,6 +13,8 @@ namespace Microsoft.Net.Http.Client
     {
         public ManagedHandler()
         {
+            MaxAutomaticRedirects = 20;
+            RedirectMode = RedirectMode.NoDowngrade;
         }
 
         public Uri ProxyAddress
@@ -21,12 +23,87 @@ namespace Microsoft.Net.Http.Client
             get; set;
         }
 
+        public int MaxAutomaticRedirects { get; set; }
+
+        public RedirectMode RedirectMode { get; set; }
+
         protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (request == null)
             {
                 throw new ArgumentNullException("request");
             }
+
+            HttpResponseMessage response = null;
+            int redirectCount = 0;
+            bool retry;
+
+            do
+            {
+                retry = false;
+                response = await ProcessRequestAsync(request, cancellationToken);
+                if (redirectCount < MaxAutomaticRedirects && IsAllowedRedirectResponse(request, response))
+                {
+                    redirectCount++;
+                    retry = true;
+                }
+
+            } while (retry);
+
+            return response;
+        }
+
+        private bool IsAllowedRedirectResponse(HttpRequestMessage request, HttpResponseMessage response)
+        {
+            // Are redirects enabled?
+            if (RedirectMode == RedirectMode.None)
+            {
+                return false;
+            }
+
+            // Status codes
+            if (response.StatusCode != System.Net.HttpStatusCode.Redirect && response.StatusCode != System.Net.HttpStatusCode.Moved)
+            {
+                return false;
+            }
+
+            Uri location = response.Headers.Location;
+
+            if (location == null)
+            {
+                return false;
+            }
+
+            if (!location.IsAbsoluteUri)
+            {
+                request.RequestUri = location;
+                request.SetPathAndQueryProperty(null);
+                request.SetAddressLineProperty(null);
+                return true;
+            }
+
+            // Check if redirect from https to http is allowed
+            if (request.IsHttps() && location.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase)
+                && RedirectMode == RedirectMode.NoDowngrade)
+            {
+                return false;
+            }
+
+            // Reset fields calculated from the URI.
+            request.RequestUri = location;
+            request.SetSchemeProperty(null);
+            request.Headers.Host = null;
+            request.SetHostProperty(null);
+            request.SetConnectionHostProperty(null);
+            request.SetPortProperty(null);
+            request.SetConnectionPortProperty(null);
+            request.SetPathAndQueryProperty(null);
+            request.SetAddressLineProperty(null);
+            return true;
+        }
+
+        private async Task<HttpResponseMessage> ProcessRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
 
             ProcessUrl(request);
@@ -119,7 +196,7 @@ namespace Microsoft.Net.Http.Client
                 }
                 else
                 {
-                    pathAndQuery = "/" + request.RequestUri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped);
+                    pathAndQuery = Uri.EscapeUriString(request.RequestUri.ToString());
                 }
                 request.SetPathAndQueryProperty(pathAndQuery);
             }

@@ -118,7 +118,10 @@ namespace Microsoft.Net.Http.Client
                 throw new HttpRequestException("Invalid status code: " + responseLineParts[1]);
             }
             HttpResponseMessage response = new HttpResponseMessage((HttpStatusCode)statusCode);
-            // TODO: Reason Phrase
+            if (responseLineParts.Length >= 3)
+            {
+                response.ReasonPhrase = responseLineParts[2];
+            }
             var content = new HttpConnectionResponseContent(this);
             response.Content = content;
 
