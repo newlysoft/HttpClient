@@ -9,21 +9,17 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
 {
     public class RedirectTests
     {
-        private const string ServerAddress = "http://localhost:8880/";
-
         [Fact]
         public async Task RedirectWithRedirectsDisabled_ReturnsRedirectResponse()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler() { RedirectMode = RedirectMode.None }))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
 
                     var serverContext = await acceptTask;
                     serverContext.Response.Redirect("/Foo");
@@ -47,16 +43,14 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
         [Fact]
         public async Task Redirect_Redirected()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler()))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
 
                     var serverContext = await acceptTask;
                     Assert.Equal("/", serverContext.Request.Url.AbsolutePath);
@@ -83,16 +77,14 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
         [Fact]
         public async Task RedirectLimitHit_RedirectsStop()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler() { MaxAutomaticRedirects = 2 }))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
 
                     var serverContext = await acceptTask;
                     Assert.Equal("/", serverContext.Request.Url.AbsolutePath);

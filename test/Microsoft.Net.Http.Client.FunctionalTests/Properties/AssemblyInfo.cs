@@ -34,6 +34,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-
-// These tests can't run in parallel because they all use the same port.
-[assembly: Xunit.CollectionBehaviorAttribute(Xunit.CollectionBehavior.CollectionPerAssembly, DisableTestParallelization = true)]

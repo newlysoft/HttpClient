@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -11,21 +9,17 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
 {
     public class HelloWorldTests
     {
-        private const string ServerAddress = "http://localhost:8880/";
-
         [Fact]
         public async Task GetWithNoBody()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler()))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
                     
                     var serverContext = await acceptTask;
                     serverContext.Response.Headers.Add("CustomHeader", "CustomValue");
@@ -49,16 +43,14 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
         [Fact]
         public async Task GetWithContentLengthResponseBody()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler()))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
 
                     var serverContext = await acceptTask;
                     serverContext.Response.ContentLength64 = 100;
@@ -80,16 +72,14 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
         [Fact]
         public async Task GetWithEmptyChunkedResponseBody()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler()))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
 
                     var serverContext = await acceptTask;
                     serverContext.Response.SendChunked = true;
@@ -113,16 +103,14 @@ namespace Microsoft.Net.Http.Client.FunctionalTests
         [Fact]
         public async Task GetWithChunkedResponseBody()
         {
-            using (HttpListener listener = new HttpListener())
+            string baseAddress;
+            using (var listener = Utilities.CreateServer(out baseAddress))
             {
-                listener.Prefixes.Add(ServerAddress);
-                listener.Start();
-
                 var acceptTask = listener.GetContextAsync();
 
                 using (HttpClient client = new HttpClient(new ManagedHandler()))
                 {
-                    var requestTask = client.GetAsync(ServerAddress);
+                    var requestTask = client.GetAsync(baseAddress);
 
                     var serverContext = await acceptTask;
                     serverContext.Response.OutputStream.Write(new byte[10], 0, 10);
