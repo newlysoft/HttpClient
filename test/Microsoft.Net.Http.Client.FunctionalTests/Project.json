@@ -1,12 +1,11 @@
 {
-     "version" : "0.1-alpha-*",
      "commands": {
           "test": "Xunit.KRunner"
      },
      "dependencies": {
           "Microsoft.Net.Http.Client" : "",
           "System.Net.Http" : "",
-          "Xunit.KRunner": "0.1-alpha-*",
+          "Xunit.KRunner": "1.0.0-*",
           "xunit.abstractions": "2.0.0-aspnet-*",
           "xunit.assert": "2.0.0-aspnet-*",
           "xunit.core": "2.0.0-aspnet-*",

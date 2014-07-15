@@ -8,7 +8,7 @@
         None,
 
         /// <summary>
-        /// Dissalows redirecting from HTTPS to HTTP
+        /// Disallows redirecting from HTTPS to HTTP
         /// </summary>
         NoDowngrade,
 

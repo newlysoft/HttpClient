@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -61,8 +62,8 @@ namespace Microsoft.Net.Http.Client
                 return false;
             }
 
-            // Status codes
-            if (response.StatusCode != System.Net.HttpStatusCode.Redirect && response.StatusCode != System.Net.HttpStatusCode.Moved)
+            // Status codes 301 and 302
+            if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.Moved)
             {
                 return false;
             }
@@ -83,7 +84,7 @@ namespace Microsoft.Net.Http.Client
             }
 
             // Check if redirect from https to http is allowed
-            if (request.IsHttps() && location.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase)
+            if (request.IsHttps() && string.Equals("http", location.Scheme, StringComparison.OrdinalIgnoreCase)
                 && RedirectMode == RedirectMode.NoDowngrade)
             {
                 return false;
