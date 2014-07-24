@@ -274,6 +274,7 @@ namespace Microsoft.Net.Http.Client
             // CONNECT server.example.com:80 HTTP / 1.1
             // Host: server.example.com:80
             var connectReqeuest = new HttpRequestMessage();
+            connectReqeuest.Headers.ProxyAuthorization = request.Headers.ProxyAuthorization;
             connectReqeuest.Method = new HttpMethod("CONNECT");
             // TODO: IPv6 hosts
             string authority = request.GetHostProperty() + ":" + request.GetPortProperty().Value;
@@ -298,7 +299,7 @@ namespace Microsoft.Net.Http.Client
             if ((int)connectResponse.StatusCode < 200 || 300 <= (int)connectResponse.StatusCode)
             {
                 transport.Dispose();
-                throw new HttpRequestException("Failed to negotiate the poxy tunnel: " + connectResponse.ToString());
+                throw new HttpRequestException("Failed to negotiate the proxy tunnel: " + connectResponse.ToString());
             }
         }
     }
