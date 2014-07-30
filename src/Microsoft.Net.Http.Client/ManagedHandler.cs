@@ -80,6 +80,7 @@ namespace Microsoft.Net.Http.Client
                 request.RequestUri = location;
                 request.SetPathAndQueryProperty(null);
                 request.SetAddressLineProperty(null);
+                request.Headers.Authorization = null;
                 return true;
             }
 
@@ -94,6 +95,7 @@ namespace Microsoft.Net.Http.Client
             request.RequestUri = location;
             request.SetSchemeProperty(null);
             request.Headers.Host = null;
+            request.Headers.Authorization = null;
             request.SetHostProperty(null);
             request.SetConnectionHostProperty(null);
             request.SetPortProperty(null);
