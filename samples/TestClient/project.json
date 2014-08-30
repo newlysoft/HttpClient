@@ -3,7 +3,7 @@
         "Microsoft.Net.Http.Client" : "",
         "System.Net.Http" : ""
     },
-    "configurations": {
+    "frameworks": {
         "net45": { },
         "k10": {
             "dependencies": {

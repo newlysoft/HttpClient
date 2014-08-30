@@ -6,7 +6,7 @@
   "compilationOptions": {
     "allowUnsafe": true
   },
-  "configurations": {
+  "frameworks": {
     "net45": {
       "dependencies": {
         "System.Net.Http" : ""
