@@ -24,7 +24,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="packages.config" />
-    <Content Include="Project.json" />
+    <Content Include="project.json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HelloWorldTests.cs" />
