@@ -5,7 +5,7 @@
     },
     "frameworks": {
         "net45": { },
-        "k10": {
+        "aspnetcore50": {
             "dependencies": {
                 "System.Console": "4.0.0.0",
                 "System.Runtime": "4.0.20.0"
