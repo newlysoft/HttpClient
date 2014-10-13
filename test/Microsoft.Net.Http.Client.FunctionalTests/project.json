@@ -3,8 +3,7 @@
           "test": "Xunit.KRunner"
      },
      "dependencies": {
-          "Microsoft.Net.Http.Client" : "",
-          "System.Net.Http" : "",
+          "Microsoft.Net.Http.Client" : "1.0.0-*",
           "Xunit.KRunner": "1.0.0-*",
           "xunit.abstractions": "2.0.0-aspnet-*",
           "xunit.assert": "2.0.0-aspnet-*",
@@ -13,8 +12,8 @@
      },
      "frameworks": {
         "net45": {
-            "dependencies": {
-                "System.Runtime": ""
+            "frameworkAssemblies": { 
+                "System.Runtime": "4.0.0.0"
             }
         }
      }
