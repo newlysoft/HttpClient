@@ -20,7 +20,7 @@
                 "System.Diagnostics.Contracts": "4.0.0-beta-*",
                 "System.Diagnostics.Debug": "4.0.10-beta-*",
                 "System.Diagnostics.Tools": "4.0.0-beta-*",
-                "System.Globalization": "4.0.10",
+                "System.Globalization": "4.0.10-beta-*",
                 "System.IO": "4.0.0-beta-*",
                 "System.IO.FileSystem": "4.0.0-beta-*",
                 "System.Linq": "4.0.0-beta-*",
