@@ -4,14 +4,10 @@
      },
      "dependencies": {
           "Microsoft.Net.Http.Client" : "1.0.0-*",
-          "Xunit.KRunner": "1.0.0-*",
-          "xunit.abstractions": "2.0.0-aspnet-*",
-          "xunit.assert": "2.0.0-aspnet-*",
-          "xunit.core": "2.0.0-aspnet-*",
-          "xunit.execution": "2.0.0-aspnet-*"
+          "Xunit.KRunner": "1.0.0-*"
      },
      "frameworks": {
-        "net45": {
+        "aspnet50": {
             "frameworkAssemblies": { 
                 "System.Runtime": "4.0.0.0"
             }
