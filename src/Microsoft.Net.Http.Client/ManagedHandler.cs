@@ -3,10 +3,10 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Net.Security;
 
 namespace Microsoft.Net.Http.Client
 {
@@ -132,7 +132,7 @@ namespace Microsoft.Net.Http.Client
             {
                 SslStream sslStream = new SslStream(transport);
                 await sslStream.AuthenticateAsClientAsync(request.GetHostProperty());
-                transport = sslStream;
+                transport = new ApmStreamWrapper(sslStream);
             }
 
             var bufferedReadStream = new BufferedReadStream(transport);
