@@ -5,7 +5,12 @@
     "frameworks": {
         "net45": {
             "frameworkAssemblies": {
-                "System.Net.Http": "4.0.0.0"
+                "System.Net.Http": ""
+            }
+        },
+        "aspnet50": {
+            "frameworkAssemblies": {
+                "System.Net.Http": ""
             }
         },
         "aspnetcore50": {
